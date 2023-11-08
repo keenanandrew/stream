@@ -1,3 +1,8 @@
+
+# This is a fork of Joseph Machado's DE project, which I'm dissecting here to learn how a functioning Kafka project works. 
+
+Like dissecting a frog to see how it works, but trying not to kill the frog.
+
 # Beginner Data Engineering Project - Stream Version
 
 Code for blog at [Data Engineering Project Stream Edition](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-stream-edition/).
