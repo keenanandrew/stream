@@ -1,19 +1,20 @@
-import argparse
-import json
-import random
+import argparse # something to do with command line arguments
+import json # handling json objects
+import random # random number generation
 from datetime import datetime
-from uuid import uuid4
+from uuid import uuid4 # unique identifiers
 
-import psycopg2
-from confluent_kafka import Producer
-from faker import Faker
+import psycopg2 # adaptor for postgres
+from confluent_kafka import Producer # kafka!
+from faker import Faker # module for creating fake data
 
-fake = Faker()
+fake = Faker() # initialise a Faker object
 
 
 # Generate user data
-def gen_user_data(num_user_records: int) -> None:
+def gen_user_data(num_user_records: int) -> None: # indicates the function doesn't return a value
     for id in range(num_user_records):
+        # the database connection
         conn = psycopg2.connect(
             dbname="postgres",
             user="postgres",
@@ -53,6 +54,8 @@ def gen_user_data(num_user_records: int) -> None:
 
 # Generate a random user agent string
 def random_user_agent():
+    # user_agent must be something predefined in Faker
+    # 'fake' is the Faker object created earlier
     return fake.user_agent()
 
 
@@ -71,6 +74,8 @@ def generate_click_event(user_id, product_id=None):
     user_agent = random_user_agent()
     ip_address = random_ip()
     datetime_occured = datetime.now()
+
+    # looks like a simple way to define a json object
 
     click_event = {
         "click_id": click_id,
@@ -118,20 +123,29 @@ def generate_checkout_event(user_id, product_id):
 
 
 # Function to push the events to a Kafka topic
+
+# ok this is the bit that's new to me
+# Producer is some submodule of the kafka library
+#
+
 def push_to_kafka(event, topic):
     producer = Producer({'bootstrap.servers': 'kafka:9092'})
     producer.produce(topic, json.dumps(event).encode('utf-8'))
+    # flush - checks that previously sent messages have been' completed'
     producer.flush()
 
 
 def gen_clickstream_data(num_click_records: int) -> None:
     for _ in range(num_click_records):
+        # the _ is a convention for a variable that isn't actually used in the block
         user_id = random.randint(1, 100)
-        click_event = generate_click_event(user_id)
-        push_to_kafka(click_event, 'clicks')
+        click_event = generate_click_event(user_id) # the json objects are created here
+        # here's the push_to_kafka function
+        push_to_kafka(click_event, 'clicks') # sent to the 'clicks' topic
 
         # simulate multiple clicks & checkouts 50% of the time
         while random.randint(1, 100) >= 50:
+            # generate_click_event is the function that makes a json object
             click_event = generate_click_event(
                 user_id, click_event['product_id']
             )
@@ -159,7 +173,7 @@ if __name__ == "__main__":
         "--num_click_records",
         type=int,
         help="Number of click records to generate",
-        default=100000000,
+        default=100000000, # wow
     )
     args = parser.parse_args()
     gen_user_data(args.num_user_records)
