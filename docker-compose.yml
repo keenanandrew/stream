@@ -1,6 +1,15 @@
-version: "2.2"
-services:
+# This is docker-compose.yml
+# It contains a bunch of 'services', which roughly correspond to a node / image
+# one for kafka, one for prometheus, etc
+#
+# where is the network defined? that connects them? anonymously?
 
+
+version: "2.2"
+services: # where all the different nodes are defined
+
+
+  # what's the diff between jobmanager and taskmanager?
   jobmanager:
     container_name: jobmanager
     build:
@@ -20,7 +29,7 @@ services:
     container_name: taskmanager
     build:
       context: ./container/flink/
-    depends_on:
+    depends_on: # aha here's the diff
       - jobmanager
     command: taskmanager
     ports:
@@ -35,7 +44,8 @@ services:
         taskmanager.numberOfTaskSlots: 2        
 
   prometheus:
-    image: prom/prometheus:v2.37.1
+    # prometheus collates the data for the dashboard
+    image: prom/prometheus:v2.37.1 # gets the image from here
     container_name: prometheus
     ports:
       - "9090:9090"
@@ -43,17 +53,19 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
-    image: grafana/grafana:8.4.0
+    # grafana does the dashboard, using info from prometheus
+    image: grafana/grafana:8.4.0 # gets the image from here
     container_name: grafana
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=flink
+      - GF_SECURITY_ADMIN_PASSWORD=flink # sets the grafana password
     volumes:
       - ./grafana/provisioning/:/etc/grafana/provisioning/
 
   zookeeper:
-    image: docker.io/bitnami/zookeeper:3.8
+    # zookeeper does some kind of coordination
+    image: docker.io/bitnami/zookeeper:3.8 # gets the image from here
     container_name: zookeeper
     ports:
       - "2181:2181"
@@ -61,12 +73,14 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
 
   kafka:
-    image: docker.io/bitnami/kafka:3.4
+    # kafka takes in the fake data and pumps out two streams, aka 'topics'
+    # chunked into neat 'partitions'
+    image: docker.io/bitnami/kafka:3.4 # gets the image from here
     container_name: kafka
     ports:
       - "9093:9093"
     environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181 # the kafka/zookeeper link?
       - KAFKA_ADVERTISED_LISTENERS=INSIDE://:9092,OUTSIDE://:9093
       - KAFKA_CFG_LISTENERS=INSIDE://:9092,OUTSIDE://:9093
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
@@ -76,6 +90,9 @@ services:
       - zookeeper
 
   postgres:
+    # the databases
+    # one for user data
+    # one for attributed checkout information
     image: debezium/postgres:15
     container_name: postgres
     hostname: postgres
@@ -86,12 +103,17 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql # where it starts from
+        # so this is how docker can be instructed to initialise a database
+        # and now I have an example of an SQL query that sets up a database end-to-end
 
   datagen:
     build:
       context: ./container/datagen/
-    command: python /opt/datagen/gen_fake_data.py
+    command: python /opt/datagen/gen_fake_data.py 
+      # the script that pumps out fake data
+      # this is the command to execute that script
+
     volumes:
       - ./code:/opt/datagen/code
       - ./datagen:/opt/datagen

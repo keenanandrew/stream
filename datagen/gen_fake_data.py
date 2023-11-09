@@ -1,18 +1,20 @@
-import argparse # something to do with command line arguments
-import json # handling json objects
-import random # random number generation
+import argparse  # something to do with command line arguments
+import json  # handling json objects
+import random  # random number generation
 from datetime import datetime
-from uuid import uuid4 # unique identifiers
+from uuid import uuid4  # unique identifiers
 
-import psycopg2 # adaptor for postgres
-from confluent_kafka import Producer # kafka!
-from faker import Faker # module for creating fake data
+import psycopg2  # adaptor for postgres
+from confluent_kafka import Producer  # kafka!
+from faker import Faker  # module for creating fake data
 
-fake = Faker() # initialise a Faker object
+fake = Faker()  # initialise a Faker object
 
 
 # Generate user data
-def gen_user_data(num_user_records: int) -> None: # indicates the function doesn't return a value
+def gen_user_data(
+    num_user_records: int,
+) -> None:  # indicates the function doesn't return a value
     for id in range(num_user_records):
         # the database connection
         conn = psycopg2.connect(
@@ -128,6 +130,7 @@ def generate_checkout_event(user_id, product_id):
 # Producer is some submodule of the kafka library
 #
 
+
 def push_to_kafka(event, topic):
     producer = Producer({'bootstrap.servers': 'kafka:9092'})
     producer.produce(topic, json.dumps(event).encode('utf-8'))
@@ -137,11 +140,14 @@ def push_to_kafka(event, topic):
 
 def gen_clickstream_data(num_click_records: int) -> None:
     for _ in range(num_click_records):
-        # the _ is a convention for a variable that isn't actually used in the block
+        # the _ is a convention for a variable
+        # that isn't actually used in the block
         user_id = random.randint(1, 100)
-        click_event = generate_click_event(user_id) # the json objects are created here
+        click_event = generate_click_event(
+            user_id
+        )  # the json objects are created here
         # here's the push_to_kafka function
-        push_to_kafka(click_event, 'clicks') # sent to the 'clicks' topic
+        push_to_kafka(click_event, 'clicks')  # sent to the 'clicks' topic
 
         # simulate multiple clicks & checkouts 50% of the time
         while random.randint(1, 100) >= 50:
@@ -173,7 +179,7 @@ if __name__ == "__main__":
         "--num_click_records",
         type=int,
         help="Number of click records to generate",
-        default=100000000, # wow
+        default=100000000,  # wow
     )
     args = parser.parse_args()
     gen_user_data(args.num_user_records)
